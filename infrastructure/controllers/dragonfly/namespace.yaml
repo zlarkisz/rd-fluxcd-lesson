@@ -1,0 +1,18 @@
+# =============================================================================
+# Namespace: dragonfly-operator-system
+# =============================================================================
+# Окремий простір імен для самого оператора Dragonfly.
+# За конвенцією оператори живуть в namespace <operator-name>-system.
+# Це той самий namespace, який створює офіційний інсталер (kubectl apply -f
+# .../dragonfly-operator.yaml).
+#
+# Сам оператор працює "глобально" — стежить за ресурсами Dragonfly у БУДЬ-
+# ЯКОМУ namespace (development, production, тощо). Це нормальна модель
+# для cluster-scoped operators.
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dragonfly-operator-system
+  labels:
+    app.kubernetes.io/managed-by: flux
