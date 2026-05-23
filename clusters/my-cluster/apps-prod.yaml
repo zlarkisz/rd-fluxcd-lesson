@@ -1,0 +1,60 @@
+# =============================================================================
+# Flux Kustomization: app-prod
+# =============================================================================
+# Розгортає overlay/production у кластер.
+#
+# Що з'явиться:
+#   - Namespace production
+#   - course-app Deployment + Service + Ingress + HPA
+#   - Dragonfly CR (2 інстанси: master + replica)
+#
+# КРИТИЧНО: ignore replicas для HPA-керованого Deployment (див. patches нижче).
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: app-prod
+  namespace: flux-system
+spec:
+  interval: 10m
+
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+
+  path: ./apps/overlays/production
+  prune: true
+
+  retryInterval: 1m
+  timeout: 5m
+
+  # Як і dev, чекаємо infrastructure (Dragonfly Operator + metrics-server).
+  # metrics-server обов'язковий, бо без нього HPA не зможе читати метрики.
+  dependsOn:
+    - name: infrastructure
+
+  # ---------------------------------------------------------------------------
+  # PATCHES — модифікація РЕНДЕРОВАНИХ маніфестів ПІСЛЯ Kustomize, але ПЕРЕД
+  # apply в кластер. Це окремий механізм Flux, не плутати з Kustomize.patches.
+  #
+  # Чому це тут потрібно?
+  #   У production replicas Deployment'у керує HPA. Якщо Flux при кожному
+  #   reconcile буде писати у Deployment "replicas: 1" з нашого YAML —
+  #   почнеться війна з HPA, який скейлить на 3-10. Flux збиватиме скейл,
+  #   HPA одразу скейлитиме назад, навантаження зростатиме і так далі.
+  #
+  # Рішення: сказати Flux "при apply Deployment course-app у production —
+  # ВИДАЛИ поле /spec/replicas зі своїх даних". Тоді Kubernetes збереже
+  # те значення, яке там зараз стоїть (поставлене HPA). Flux ніколи не
+  # перезаписує replicas, HPA єдиний власник цього поля.
+  #
+  # Це STANDARD GitOps + HPA pattern. Без нього HPA фактично не працює.
+  # ---------------------------------------------------------------------------
+  patches:
+    - target:
+        kind: Deployment
+        name: course-app
+        namespace: production
+      patch: |-
+        - op: remove
+          path: /spec/replicas

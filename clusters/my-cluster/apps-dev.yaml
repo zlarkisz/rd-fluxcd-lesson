@@ -1,0 +1,40 @@
+# =============================================================================
+# Flux Kustomization: app-dev
+# =============================================================================
+# Розгортає overlay/development у кластер.
+#
+# Що з'явиться:
+#   - Namespace development
+#   - course-app Deployment (1 репліка) + Service + Ingress
+#   - Dragonfly CR (1 інстанс)
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: app-dev
+  namespace: flux-system
+spec:
+  interval: 10m
+
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+
+  path: ./apps/overlays/development
+  prune: true
+
+  retryInterval: 1m
+  timeout: 5m
+
+  # ---------------------------------------------------------------------------
+  # dependsOn — ЧЕКАТИ готовності infrastructure перш ніж застосовувати.
+  #
+  # Без цього: Flux спробує apply Dragonfly CR одразу. Якщо CRD ще не
+  # встановлений (бо оператор ще не піднявся) — apply провалиться з помилкою
+  # "no matches for kind Dragonfly". Flux буде ретраїти, але це шумно.
+  #
+  # З dependsOn: Flux чекає поки infrastructure Kustomization не стане Ready,
+  # потім стартує app-dev. Чиста залежність.
+  # ---------------------------------------------------------------------------
+  dependsOn:
+    - name: infrastructure

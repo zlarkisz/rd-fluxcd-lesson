@@ -1,0 +1,46 @@
+# =============================================================================
+# Flux Kustomization: infrastructure
+# =============================================================================
+# Каже Flux: "стеж за папкою ./infrastructure/controllers у нашому Git-репо
+# (GitRepository flux-system) і застосовуй усе з неї в кластер".
+#
+# Що це розгорне:
+#   - Dragonfly Operator (HelmRelease) → з'явиться namespace
+#     dragonfly-operator-system + CRD dragonflies.dragonflydb.io
+#   - Metrics-server (HelmRelease) → потрібен для HPA в production
+#
+# Чому в namespace flux-system?
+#   Flux Kustomization — це об'єкт самого Flux. За конвенцією всі такі
+#   об'єкти живуть у flux-system, поруч із контролерами.
+# =============================================================================
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure
+  namespace: flux-system
+spec:
+  # Як часто Flux перевіряє чи треба переробити reconcile.
+  # 10 хвилин — баланс між реактивністю і шумом.
+  # У будь-який момент можна форснути: flux reconcile kustomization infrastructure
+  interval: 10m
+
+  # Звідки тягнути файли. flux-system це GitRepository, який створив
+  # bootstrap — він вказує на наш rd-fluxcd-lesson на GitHub.
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+
+  # Підпапка в репо, яку обробляти. У ній Kustomize знайде
+  # kustomization.yaml (агрегатор), а далі — dragonfly/ і metrics-server/.
+  path: ./infrastructure/controllers
+
+  # prune: true — якщо ти ВИДАЛИШ файл з Git, Flux ВИДАЛИТЬ ресурс з кластера.
+  # Без цього "осиротілі" об'єкти жили б у кластері навіки. Це і є GitOps.
+  prune: true
+
+  # Якщо застосування впало — повторити через 1 хвилину (а не чекати 10).
+  retryInterval: 1m
+
+  # Таймаут на повний цикл reconcile.
+  # 5 хвилин достатньо — встановлення Helm-чартів може зайняти хвилину-дві.
+  timeout: 5m
