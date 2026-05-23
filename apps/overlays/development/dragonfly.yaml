@@ -14,6 +14,13 @@
 #   (поле "namespace: development"). Kustomize автоматично пропише його
 #   в metadata.namespace всім ресурсам. Це робить файл переносним —
 #   той самий dragonfly.yaml шаблон можна перевикористати в інших оверлеях.
+#
+# Чому memory >= 384Mi?
+#   Dragonfly сам ВИМАГАЄ мінімум 256MiB АБСОЛЮТНОЇ пам'яті на потік (thread).
+#   З логів: "There are 1 threads, so 256.00MiB are required. Exiting..."
+#   Якщо limit = 256Mi → Dragonfly бачить ~204Mi доступних (overhead зайняв
+#   решту) і відмовляється стартувати. Тому ставимо запас: 384Mi requests,
+#   512Mi limit. Це найменші безпечні значення для 1 потоку.
 # =============================================================================
 apiVersion: dragonflydb.io/v1alpha1
 kind: Dragonfly
@@ -29,11 +36,12 @@ spec:
 
   image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
 
-  # Мінімальні ресурси для dev — щоб не з'їсти Docker Desktop повністю.
+  # Мінімально життєздатні ресурси для Dragonfly.
+  # memory >= 256Mi — жорстка вимога самого Dragonfly (див. коментар згори).
   resources:
     requests:
       cpu: "50m"
-      memory: "128Mi"
+      memory: "384Mi"
     limits:
       cpu: "250m"
-      memory: "256Mi"
+      memory: "512Mi"
