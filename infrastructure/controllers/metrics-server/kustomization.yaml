@@ -1,0 +1,12 @@
+# =============================================================================
+# kustomization.yaml — INFRASTRUCTURE: metrics-server
+# =============================================================================
+# Об'єднує HelmRepository + HelmRelease для metrics-server.
+# Namespace kube-system вже існує, тому не створюємо.
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - repository.yaml
+  - release.yaml

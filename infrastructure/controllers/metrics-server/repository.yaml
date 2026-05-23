@@ -1,0 +1,16 @@
+# =============================================================================
+# HelmRepository: metrics-server (HTTP, не OCI)
+# =============================================================================
+# Офіційний чарт від kubernetes-sigs. На відміну від Dragonfly Operator,
+# тут "класичний" HTTP-репозиторій Helm з index.yaml на gh-pages.
+#
+# type: default (можна не вказувати — це і є дефолт) — HTTP Helm repo.
+# =============================================================================
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: metrics-server
+  namespace: flux-system
+spec:
+  interval: 30m
+  url: https://kubernetes-sigs.github.io/metrics-server/

@@ -2,9 +2,6 @@
 # kustomization.yaml — INFRASTRUCTURE: controllers (агрегатор)
 # =============================================================================
 # Об'єднує всі контролери інфраструктури в один набір.
-# Зараз тут лише dragonfly. Якщо завтра додаси cert-manager, ingress-nginx,
-# external-dns — додаси їх сюди як ще один рядок у resources.
-#
 # Це "точка входу", на яку посилатиметься Flux Kustomization з
 # clusters/my-cluster/infrastructure.yaml.
 # =============================================================================
@@ -12,4 +9,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - dragonfly
+  - dragonfly         # Dragonfly Operator (потрібен для apps/overlays/*)
+  - metrics-server    # потрібен для HPA в production

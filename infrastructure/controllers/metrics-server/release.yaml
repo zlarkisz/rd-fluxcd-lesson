@@ -1,0 +1,48 @@
+# =============================================================================
+# HelmRelease: metrics-server
+# =============================================================================
+# Встановлює metrics-server у namespace kube-system (стандартне місце).
+#
+# Ключові values:
+#   args[+]: --kubelet-insecure-tls
+#     Без цього metrics-server не довірятиме self-signed сертифікату
+#     kubelet у Docker Desktop / Rancher Desktop / minikube → метрики
+#     не зчитуватимуться → HPA покаже <unknown> у TARGETS.
+#     У реальному prod-кластері цей флаг НЕ ставлять (там валідні серти).
+#
+# Namespace HelmRelease — kube-system, бо там традиційно живуть
+# системні компоненти Kubernetes. createNamespace=false бо kube-system
+# вже існує "з коробки".
+# =============================================================================
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metrics-server
+  namespace: kube-system
+spec:
+  interval: 30m
+
+  chart:
+    spec:
+      chart: metrics-server
+      version: "3.x"     # будь-яка 3.x.x (зараз ~3.12.x)
+      sourceRef:
+        kind: HelmRepository
+        name: metrics-server
+        namespace: flux-system
+      interval: 12h
+
+  install:
+    createNamespace: false
+    remediation:
+      retries: 3
+
+  upgrade:
+    remediation:
+      retries: 3
+
+  # Кастомні values чарту.
+  values:
+    args:
+      # Не перевіряти TLS-серт kubelet (потрібно для Docker Desktop).
+      - --kubelet-insecure-tls
