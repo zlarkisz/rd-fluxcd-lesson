@@ -1,0 +1,32 @@
+# =============================================================================
+# kustomization.yaml — BASE
+# =============================================================================
+# Це "зміст" для Kustomize. Каже які YAML-файли підхопити з цієї папки.
+#
+# Як працює:
+#   kubectl apply -k apps/base/
+# Kustomize читає цей файл, бере resources, мерджить їх у один потік
+# і застосовує в кластер. Без kustomization.yaml файли в папці просто
+# лежать — Kustomize їх не побачить.
+#
+# common labels — додаються до УСІХ ресурсів (Deployment, Service, Ingress)
+# і до їх селекторів. Корисно для:
+#   - kubectl get all -l app.kubernetes.io/part-of=course-app
+#   - відстеження що належить чому
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Ресурси, які входять у цей base. Порядок не критичний — Kustomize
+# сам розбирає залежності і застосовує в правильному порядку.
+resources:
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+
+# Лейбли які додаються ДО ВСІХ ресурсів цього набору.
+# Це краще ніж вписувати їх руками в кожен файл.
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: course-app
+      app.kubernetes.io/managed-by: flux

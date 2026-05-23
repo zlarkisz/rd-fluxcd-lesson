@@ -1,0 +1,31 @@
+# =============================================================================
+# Service: course-app — BASE
+# =============================================================================
+# ClusterIP — внутрішня адреса в кластері.
+# ТЗ прямо вимагає ClusterIP (не NodePort, не LoadBalancer), бо зовнішній
+# доступ ми робимо через Ingress.
+#
+# Чому НЕ NodePort як у попередніх домашках?
+# - NodePort відкриває порт на КОЖНІЙ ноді, що небезпечно у production
+# - ClusterIP + Ingress дають єдину точку входу з контрольованим роутингом
+# - Це той самий принцип, який реалізує production-кластер
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: course-app
+  labels:
+    app.kubernetes.io/name: course-app
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+
+  selector:
+    # ⚠️ Має збігатися з labels у Deployment.spec.template.metadata.labels
+    app.kubernetes.io/name: course-app
+
+  ports:
+    - name: http
+      port: 80               # порт Service всередині кластера
+      targetPort: http       # ім'я порту з Deployment (containerPort: 8080)
+      protocol: TCP

@@ -1,0 +1,43 @@
+# =============================================================================
+# Ingress: course-app — BASE
+# =============================================================================
+# Зовнішній HTTP-роутинг. Розкриває Service course-app назовні через
+# хост course-app.local (можна також відкривати через localhost).
+#
+# ⚠️ Для роботи Ingress потрібен Ingress Controller у кластері (зазвичай
+# ingress-nginx). Якщо контролера немає — об'єкт Ingress створиться,
+# але роутинг не запрацює (об'єкт буде "спати").
+#
+# Перевірити чи є контролер:
+#   kubectl get pods -A | grep -i ingress
+#
+# Якщо немає — встановити можна так (НЕ через GitOps, локально):
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+#
+# Або просто перевіряти застосунок через port-forward — Ingress об'єкт
+# у K8s залишається валідним, ТЗ вимагає сам факт його наявності.
+#
+# Для роботи через course-app.local треба додати у /etc/hosts:
+#   127.0.0.1   course-app.local
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: course-app
+  labels:
+    app.kubernetes.io/name: course-app
+    app.kubernetes.io/component: web
+spec:
+  ingressClassName: nginx
+
+  rules:
+    - host: course-app.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: course-app
+                port:
+                  number: 80    # порт Service з service.yaml

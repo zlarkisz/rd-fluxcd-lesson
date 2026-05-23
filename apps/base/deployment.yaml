@@ -1,0 +1,68 @@
+# =============================================================================
+# Deployment: course-app — BASE
+# =============================================================================
+# Це базовий маніфест без специфіки середовища.
+# Overlays (development/production) додають/перевизначають:
+#   - namespace (через kustomization.yaml оверлею)
+#   - replicas (development=1, production=3)
+#   - resources (production додає requests/limits)
+#
+# Принцип: тут лежить "канонічний" Deployment. Усе, що відрізняється між
+# середовищами — патчиться в overlays. Сам base має бути валідним і
+# самодостатнім (можна kubectl apply -k apps/base — і воно запрацює).
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: course-app
+  labels:
+    app.kubernetes.io/name: course-app
+    app.kubernetes.io/component: web
+spec:
+  # Дефолтна кількість реплік. Overlays перевизначають через patches:
+  #   development → 1
+  #   production  → 3
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: course-app
+
+  # Rolling update — нульовий downtime при оновленні версії.
+  # maxUnavailable: 0 → старі поди не видаляються, поки нові не стартануть.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: course-app
+    spec:
+      containers:
+        - name: course-app
+          image: zlarkisz/course-app:1.0.1
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          # -------------------------------------------------------------------
+          # ENV: підключення до Dragonfly (Redis-сумісне сховище)
+          # -------------------------------------------------------------------
+          # APP_REDIS_URL вказує на Service "dragonfly-db" — це Service,
+          # який створює Dragonfly Operator для нашого Dragonfly-інстансу.
+          # Оскільки app і Dragonfly будуть в одному namespace (development
+          # або production), достатньо короткого імені без FQDN.
+          # -------------------------------------------------------------------
+          env:
+            - name: APP_STORE
+              value: "redis"
+            - name: APP_REDIS_URL
+              value: "redis://dragonfly-db:6379"
+            - name: APP_MESSAGE
+              value: "Course App via FluxCD GitOps"
