@@ -1,18 +1,30 @@
 # =============================================================================
 # kustomization.yaml — INFRASTRUCTURE: Dragonfly Operator
 # =============================================================================
-# Об'єднує три ресурси:
-#   1. Namespace для оператора
-#   2. HelmRepository (звідки тягнути чарт)
-#   3. HelmRelease (інструкція встановити чарт)
+# Встановлює Dragonfly Operator через офіційний консолідований маніфест.
 #
-# Цей "набір" Flux застосує одним блоком, коли в clusters/my-cluster/
-# з'явиться Kustomization, що вкаже на цю папку (зробимо на Етапі 5).
+# ЧОМУ НЕ HELM:
+# Офіційний Helm OCI chart (oci://ghcr.io/dragonflydb/dragonfly-operator/helm)
+# не доступний для anonymous pull — ghcr.io повертає 403 denied.
+# Це підтверджена проблема: https://github.com/dragonflydb/dragonfly-operator/issues/236
+# Тому використовуємо рекомендований у README спосіб через kubectl apply,
+# тільки в нашому випадку маніфест зберігається в Git локально і
+# застосовується через Flux Kustomization.
+#
+# ЧОМУ ЛОКАЛЬНА КОПІЯ, А НЕ URL:
+# - Контроль версії: бачиш в Git яка версія застосована
+# - Стабільність: maintainer'и завтра не оновлять main без твого відома
+# - Аудит: кожне оновлення = явний git commit
+# - Працює офлайн (для CI/CD у обмежених середовищах)
+#
+# Маніфест включає:
+#   - Namespace dragonfly-operator-system
+#   - CRD dragonflies.dragonflydb.io
+#   - ServiceAccount + ClusterRole + ClusterRoleBinding
+#   - Deployment контролера оператора
 # =============================================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - namespace.yaml
-  - repository.yaml
-  - release.yaml
+  - dragonfly-operator.yaml
