@@ -1,0 +1,20 @@
+# =============================================================================
+# Namespace: development
+# =============================================================================
+# Окремий простір імен для dev-середовища. Всі ресурси цього overlay
+# (course-app + Dragonfly) будуть жити тут.
+#
+# Чому окремий ресурс, а не просто namespace: development у kustomization?
+# - Kustomization-поле "namespace" ПРИЗНАЧАЄ namespace ресурсам, але
+#   не СТВОРЮЄ сам Namespace.
+# - Якщо namespace не існує — apply впаде з помилкою "namespace not found".
+# - Створення явним ресурсом гарантує що Flux/kubectl створить його
+#   перед усім іншим.
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: development
+  labels:
+    environment: development
+    app.kubernetes.io/managed-by: flux

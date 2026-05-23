@@ -1,0 +1,39 @@
+# =============================================================================
+# Dragonfly Custom Resource — DEVELOPMENT
+# =============================================================================
+# Custom Resource типу Dragonfly. Сам по собі це лише декларація бажаного
+# стану. Dragonfly Operator (контролер) побачить цей об'єкт і створить
+# StatefulSet + Service + Pods для реального запуску бази.
+#
+# ⚠️ Передумова: Dragonfly Operator має бути встановлений у кластері.
+#    Перевірка: kubectl get crd | grep dragonfly
+#    (має повернути "dragonflies.dragonflydb.io")
+#
+# Чому НЕ ставимо namespace тут?
+#   Намеспейс задається централізовано через kustomization.yaml оверлею
+#   (поле "namespace: development"). Kustomize автоматично пропише його
+#   в metadata.namespace всім ресурсам. Це робить файл переносним —
+#   той самий dragonfly.yaml шаблон можна перевикористати в інших оверлеях.
+# =============================================================================
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  # Ім'я ОБОВ'ЯЗКОВО має бути "dragonfly-db" — бо саме до цього хоста
+  # звертається course-app (env APP_REDIS_URL=redis://dragonfly-db:6379).
+  # Якщо змінити — треба буде синхронізувати з deployment.yaml у base.
+  name: dragonfly-db
+spec:
+  # Development: 1 інстанс — мінімум для роботи (тільки master, без реплік).
+  # Економимо ресурси на dev-кластері.
+  replicas: 1
+
+  image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
+
+  # Мінімальні ресурси для dev — щоб не з'їсти Docker Desktop повністю.
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
