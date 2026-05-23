@@ -1,0 +1,67 @@
+# =============================================================================
+# kustomization.yaml — OVERLAY: production
+# =============================================================================
+# Production-середовище:
+#   - namespace: production
+#   - course-app: 3 репліки (стартові, далі HPA скейлить до 10)
+#   - resources requests/limits для CPU+Memory (потрібно для HPA)
+#   - HPA: 3-10 копій по CPU 70%
+#   - Dragonfly: 2 репліки (1 master + 1 replica)
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: production
+
+resources:
+  - ../../base
+  - namespace.yaml
+  - dragonfly.yaml
+  - hpa.yaml          # тільки в prod, у dev його не було
+
+labels:
+  - pairs:
+      environment: production
+
+# -----------------------------------------------------------------------------
+# Patches — модифікації base-маніфестів для production.
+#
+# ⚠️ Чому НЕ ставимо replicas через patch, хоча у dev ставили?
+#   У prod replicas керується HPA. Якщо тут зафіксувати replicas=3 — буде
+#   КОНФЛІКТ: kustomize-controller Flux буде відновлювати 3, а HPA — скейлити
+#   на 10. Кожні 30 секунд "війна за поле".
+#
+#   Тому в prod replicas з base (=1) спочатку, потім HPA зразу ж піднімає
+#   до minReplicas=3, і далі сам керує. Це стандартний паттерн.
+#
+#   Альтернатива: написати у Flux Kustomization "ignore replicas field"
+#   через .spec.patches. Зробимо це на Етапі 5 для надійності.
+# -----------------------------------------------------------------------------
+patches:
+  # -------------------------------------------------------------------------
+  # Patch 1: додати resources до контейнера course-app у Deployment.
+  # HPA не працює без requests.cpu — тому це обов'язково.
+  #
+  # Використовуємо strategic merge patch — простіший для додавання
+  # вкладених полів у конкретний контейнер.
+  # -------------------------------------------------------------------------
+  - target:
+      kind: Deployment
+      name: course-app
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: course-app
+      spec:
+        template:
+          spec:
+            containers:
+              - name: course-app
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "128Mi"
+                  limits:
+                    cpu: "500m"
+                    memory: "256Mi"

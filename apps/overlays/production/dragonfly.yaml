@@ -1,0 +1,34 @@
+# =============================================================================
+# Dragonfly Custom Resource — PRODUCTION
+# =============================================================================
+# Production-конфігурація: 2 репліки (1 master + 1 replica).
+# Це дає реальну реплікацію даних і автоматичний failover при падінні master.
+#
+# З опису поля replicas у CRD Dragonfly (з kubectl explain):
+#   "total number of Dragonfly instances INCLUDING the master"
+#   replicas: 2 → 1 master + 1 replica
+#
+# Ресурси збільшені порівняно з dev — prod має реально працювати під
+# навантаженням, не просто стартанути.
+# =============================================================================
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  # Те ж саме ім'я "dragonfly-db" що і в dev — щоб course-app з base
+  # знаходив його за тим самим хостом APP_REDIS_URL=redis://dragonfly-db:6379.
+  # У різних namespace однакові імена — це нормально, K8s ізолює.
+  name: dragonfly-db
+spec:
+  # Production: 2 інстанси для реплікації + failover.
+  replicas: 2
+
+  image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
+
+  # Більші ресурси ніж у dev — для реального навантаження.
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
