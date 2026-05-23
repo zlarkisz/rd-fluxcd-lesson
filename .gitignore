@@ -1,0 +1,53 @@
+# =============================================================================
+# .gitignore — rd-fluxcd-lesson
+# =============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+.directory
+.fuse_hidden*
+.Trash-*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Редактори
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# Логи
+*.log
+logs/
+
+# Kubernetes / Flux — локальні артефакти
+kubeconfig
+*.kubeconfig
+.flux/
+
+# Секрети (на всяк випадок — secrets ніколи не в Git!)
+*.key
+*.pem
+*.pfx
+*.p12
+secrets/
+*.secret.yaml
+*-secret.yaml
+
+# Helm
+charts/*/charts/
+*.tgz
